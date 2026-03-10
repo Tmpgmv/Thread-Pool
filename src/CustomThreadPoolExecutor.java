@@ -1,13 +1,12 @@
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Реализация пула потоков
+ * Исправленная реализация пула потоков
  */
 class CustomThreadPoolExecutor implements CustomExecutor {
     private final int corePoolSize;
@@ -18,6 +17,7 @@ class CustomThreadPoolExecutor implements CustomExecutor {
 
     private final List<BlockingQueue<Runnable>> taskQueues;
     private final List<Worker> workers = new CopyOnWriteArrayList<>();
+    private final List<Thread> activeThreads = new CopyOnWriteArrayList<>();
     private final ThreadFactory threadFactory;
     private final AtomicBoolean isShutdown = new AtomicBoolean(false);
     private final AtomicInteger threadCount = new AtomicInteger(0);
@@ -30,7 +30,6 @@ class CustomThreadPoolExecutor implements CustomExecutor {
         this.queueSize = queueSize;
         this.minSpareThreads = minSpareThreads;
 
-        // Используем внешнюю фабрику с loggingWrapper
         this.threadFactory = new CustomThreadFactory("MyPool-worker");
 
         this.taskQueues = new ArrayList<>();
@@ -38,16 +37,20 @@ class CustomThreadPoolExecutor implements CustomExecutor {
             taskQueues.add(new LinkedBlockingQueue<>(queueSize));
         }
 
+        // Запускаем core потоки
         for (int i = 0; i < corePoolSize; i++) {
             addWorker(i);
         }
     }
 
     private void addWorker(int queueIndex) {
-        if (threadCount.get() < maxPoolSize) {
-            Worker worker = new Worker(taskQueues.get(queueIndex % maxPoolSize));
+        if (threadCount.get() < maxPoolSize && !isShutdown.get()) {
+            int targetQueue = queueIndex % maxPoolSize;
+            Worker worker = new Worker(taskQueues.get(targetQueue));
             workers.add(worker);
+
             Thread t = threadFactory.newThread(worker);
+            activeThreads.add(t); // Сохраняем Thread
             t.start();
             threadCount.incrementAndGet();
         }
@@ -60,13 +63,13 @@ class CustomThreadPoolExecutor implements CustomExecutor {
             return;
         }
 
-        // 1. Упреждающее создание при нехватке "запасных" (minSpareThreads)
+        // 1. Создаём новые потоки при нехватке запасных
         long idleThreads = workers.stream().filter(w -> !w.isWorking()).count();
         if (idleThreads < minSpareThreads && threadCount.get() < maxPoolSize) {
             addWorker(threadCount.get());
         }
 
-        // 2. Балансировка: Least Loaded
+        // 2. Least Loaded балансировка
         int targetIndex = 0;
         BlockingQueue<Runnable> targetQueue = taskQueues.get(0);
         int minSize = Integer.MAX_VALUE;
@@ -101,13 +104,25 @@ class CustomThreadPoolExecutor implements CustomExecutor {
     private class Worker implements Runnable {
         private final BlockingQueue<Runnable> myQueue;
         private volatile boolean working = false;
+        private volatile Thread myThread;
 
-        public Worker(BlockingQueue<Runnable> queue) { this.myQueue = queue; }
-        public boolean isWorking() { return working; }
+        public Worker(BlockingQueue<Runnable> queue) {
+            this.myQueue = queue;
+        }
+
+        public boolean isWorking() {
+            return working;
+        }
+
+        public Thread getThread() {
+            return myThread;
+        }
 
         @Override
         public void run() {
-            String threadName = Thread.currentThread().getName();
+            this.myThread = Thread.currentThread();
+            String threadName = myThread.getName();
+
             try {
                 while (!isShutdown.get() || !myQueue.isEmpty()) {
                     Runnable task = myQueue.poll(keepAliveTimeNanos, TimeUnit.NANOSECONDS);
@@ -118,6 +133,12 @@ class CustomThreadPoolExecutor implements CustomExecutor {
                             return;
                         }
                         continue;
+                    }
+
+                    // Проверка shutdown перед выполнением задачи
+                    if (isShutdown.get()) {
+                        myQueue.clear(); // Очищаем очередь
+                        return;
                     }
 
                     working = true;
@@ -131,15 +152,36 @@ class CustomThreadPoolExecutor implements CustomExecutor {
                     }
                 }
             } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+                System.out.println("[Worker] " + threadName + " interrupted");
+                Thread.currentThread().interrupt(); // Восстанавливаем флаг
             } finally {
                 workers.remove(this);
                 threadCount.decrementAndGet();
-                // Лог "terminated" выведет ThreadFactory через wrapper
+                activeThreads.remove(myThread); // Удаляем из списка
             }
         }
     }
 
-    @Override public void shutdown() { isShutdown.set(true); }
-    @Override public void shutdownNow() { isShutdown.set(true); workers.clear(); }
+    @Override
+    public void shutdown() {
+        System.out.println("[Pool] Initiating graceful shutdown...");
+        isShutdown.set(true);
+        // Потоки завершатся после выполнения текущих задач
+    }
+
+    @Override
+    public void shutdownNow() {
+        System.out.println("[Pool] Initiating immediate shutdown...");
+        isShutdown.set(true);
+
+        // Прерываем ВСЕ активные потоки
+        activeThreads.forEach(thread -> {
+            if (thread != null && thread.isAlive()) {
+                thread.interrupt();
+            }
+        });
+
+        // Очищаем очереди
+        taskQueues.forEach(BlockingQueue::clear);
+    }
 }
