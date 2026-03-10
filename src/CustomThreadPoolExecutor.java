@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Исправленная реализация пула потоков.
+ * Реализация пула потоков.
  */
 class CustomThreadPoolExecutor implements CustomExecutor {
     private final int corePoolSize;
