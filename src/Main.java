@@ -1,29 +1,27 @@
 import java.util.concurrent.TimeUnit;
 
 
+/**
+ * Тестовый запуск
+ */
 public class Main {
     public static void main(String[] args) throws InterruptedException {
         CustomThreadPoolExecutor pool = new CustomThreadPoolExecutor(
-                2,  // core
-                4,  // max
-                5, TimeUnit.SECONDS, // keepAlive
-                3,  // queueSize per worker
-                1   // minSpareThreads
+                2, 4, 2, TimeUnit.SECONDS, 3, 1
         );
 
-        // Имитация нагрузки
+        // Посылаем 15 задач, чтобы вызвать переполнение и расширение
         for (int i = 0; i < 15; i++) {
             final int id = i;
             pool.execute(() -> {
                 try {
-                    Thread.sleep(1000);
-                    System.out.println("   -> Задача " + id + " завершена в " + Thread.currentThread().getName());
+                    Thread.sleep(500);
                 } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
             });
         }
 
-        Thread.sleep(10000);
-        System.out.println("Завершение...");
+        Thread.sleep(6000); // Ждем завершения и idle timeout
+        System.out.println("Main: Calling shutdown...");
         pool.shutdown();
     }
 }

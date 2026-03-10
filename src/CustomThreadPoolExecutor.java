@@ -6,7 +6,10 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class CustomThreadPoolExecutor implements CustomExecutor {
+/**
+ * Реализация пула потоков
+ */
+class CustomThreadPoolExecutor implements CustomExecutor {
     private final int corePoolSize;
     private final int maxPoolSize;
     private final long keepAliveTimeNanos;
@@ -26,15 +29,15 @@ public class CustomThreadPoolExecutor implements CustomExecutor {
         this.keepAliveTimeNanos = unit.toNanos(keepAliveTime);
         this.queueSize = queueSize;
         this.minSpareThreads = minSpareThreads;
-        this.threadFactory = new CustomThreadFactory("CustomPool");
 
-        // Инициализируем очереди (по одной на потенциальный воркер для изоляции)
+        // Используем внешнюю фабрику с loggingWrapper
+        this.threadFactory = new CustomThreadFactory("MyPool-worker");
+
         this.taskQueues = new ArrayList<>();
         for (int i = 0; i < maxPoolSize; i++) {
             taskQueues.add(new LinkedBlockingQueue<>(queueSize));
         }
 
-        // Запуск базовых потоков
         for (int i = 0; i < corePoolSize; i++) {
             addWorker(i);
         }
@@ -44,38 +47,48 @@ public class CustomThreadPoolExecutor implements CustomExecutor {
         if (threadCount.get() < maxPoolSize) {
             Worker worker = new Worker(taskQueues.get(queueIndex % maxPoolSize));
             workers.add(worker);
-            threadFactory.newThread(worker).start();
+            Thread t = threadFactory.newThread(worker);
+            t.start();
             threadCount.incrementAndGet();
         }
     }
 
     @Override
     public void execute(Runnable command) {
-        if (isShutdown.get()) throw new RejectedExecutionException("Пул закрыт.");
+        if (isShutdown.get()) {
+            handleReject(command);
+            return;
+        }
 
-        // 1. Проверка minSpareThreads (упреждающее создание)
-        long busyThreads = workers.stream().filter(Worker::isWorking).count();
-        if (threadCount.get() - busyThreads < minSpareThreads && threadCount.get() < maxPoolSize) {
+        // 1. Упреждающее создание при нехватке "запасных" (minSpareThreads)
+        long idleThreads = workers.stream().filter(w -> !w.isWorking()).count();
+        if (idleThreads < minSpareThreads && threadCount.get() < maxPoolSize) {
             addWorker(threadCount.get());
         }
 
         // 2. Балансировка: Least Loaded
-        BlockingQueue<Runnable> targetQueue = taskQueues.stream()
-                .min(Comparator.comparingInt(Collection::size))
-                .orElse(taskQueues.get(0));
+        int targetIndex = 0;
+        BlockingQueue<Runnable> targetQueue = taskQueues.get(0);
+        int minSize = Integer.MAX_VALUE;
+
+        for (int i = 0; i < taskQueues.size(); i++) {
+            int currentSize = taskQueues.get(i).size();
+            if (currentSize < minSize) {
+                minSize = currentSize;
+                targetQueue = taskQueues.get(i);
+                targetIndex = i;
+            }
+        }
 
         if (targetQueue.offer(command)) {
-            System.out.println("Задача помещена в очередь. Размер: " + targetQueue.size());
+            System.out.println("[Pool] Task accepted into queue #" + targetIndex);
         } else {
             handleReject(command);
         }
     }
 
     private void handleReject(Runnable command) {
-        // Выбранная политика: Abort + Log.
-        // Лучше сразу сообщить клиенту о перегрузке,
-        // чем бесконечно копить задачи и раздувать задержки.
-        System.err.println("Задача отклонена из-за перегруженности системы.");
+        System.err.println("[Rejected] Task " + command + " was rejected due to overload!");
     }
 
     @Override
@@ -85,7 +98,6 @@ public class CustomThreadPoolExecutor implements CustomExecutor {
         return task;
     }
 
-    // Внутренний класс Worker
     private class Worker implements Runnable {
         private final BlockingQueue<Runnable> myQueue;
         private volatile boolean working = false;
@@ -95,30 +107,35 @@ public class CustomThreadPoolExecutor implements CustomExecutor {
 
         @Override
         public void run() {
+            String threadName = Thread.currentThread().getName();
             try {
                 while (!isShutdown.get() || !myQueue.isEmpty()) {
                     Runnable task = myQueue.poll(keepAliveTimeNanos, TimeUnit.NANOSECONDS);
 
                     if (task == null) {
                         if (threadCount.get() > corePoolSize) {
-                            System.out.println(Thread.currentThread().getName() + " время истекло, " +
-                                    "останавливаем.");
-                            break;
+                            System.out.println("[Worker] " + threadName + " idle timeout, stopping.");
+                            return;
                         }
                         continue;
                     }
 
                     working = true;
-                    System.out.println(Thread.currentThread().getName() + " выполняет задачу.");
-                    task.run();
-                    working = false;
+                    System.out.println("[Worker] " + threadName + " executes task");
+                    try {
+                        task.run();
+                    } catch (Exception e) {
+                        System.err.println("[Worker] Task error: " + e.getMessage());
+                    } finally {
+                        working = false;
+                    }
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             } finally {
                 workers.remove(this);
                 threadCount.decrementAndGet();
-                System.out.println(Thread.currentThread().getName() + " остановлен.");
+                // Лог "terminated" выведет ThreadFactory через wrapper
             }
         }
     }

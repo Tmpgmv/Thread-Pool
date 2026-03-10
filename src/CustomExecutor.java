@@ -1,8 +1,10 @@
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
+
 /**
- * Интерфейс предоставлен в задании.
+ * Интерфейс управления пулом.
+ * Предоставлен в задании.
  * */
 interface CustomExecutor extends Executor {
     void execute(Runnable command);
