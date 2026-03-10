@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Исправленная реализация пула потоков
+ * Исправленная реализация пула потоков.
  */
 class CustomThreadPoolExecutor implements CustomExecutor {
     private final int corePoolSize;
@@ -22,13 +22,12 @@ class CustomThreadPoolExecutor implements CustomExecutor {
     private final AtomicBoolean isShutdown = new AtomicBoolean(false);
     private final AtomicInteger threadCount = new AtomicInteger(0);
 
-    public CustomThreadPoolExecutor(int corePoolSize, int maxPoolSize, long keepAliveTime,
-                                    TimeUnit unit, int queueSize, int minSpareThreads) {
+    public CustomThreadPoolExecutor(int corePoolSize, int maxPoolSize, int queueSize, long keepAliveTime) {
         this.corePoolSize = corePoolSize;
         this.maxPoolSize = maxPoolSize;
-        this.keepAliveTimeNanos = unit.toNanos(keepAliveTime);
+        this.keepAliveTimeNanos = TimeUnit.SECONDS.toNanos(keepAliveTime);
         this.queueSize = queueSize;
-        this.minSpareThreads = minSpareThreads;
+        this.minSpareThreads = 1;
 
         this.threadFactory = new CustomThreadFactory("MyPool-worker");
 
@@ -50,7 +49,7 @@ class CustomThreadPoolExecutor implements CustomExecutor {
             workers.add(worker);
 
             Thread t = threadFactory.newThread(worker);
-            activeThreads.add(t); // Сохраняем Thread
+            activeThreads.add(t); // Сохраняем Thread.
             t.start();
             threadCount.incrementAndGet();
         }
@@ -135,9 +134,9 @@ class CustomThreadPoolExecutor implements CustomExecutor {
                         continue;
                     }
 
-                    // Проверка shutdown перед выполнением задачи
+                    // Проверка shutdown перед выполнением задачи.
                     if (isShutdown.get()) {
-                        myQueue.clear(); // Очищаем очередь
+                        myQueue.clear(); // Очищаем очередь.
                         return;
                     }
 
@@ -153,20 +152,20 @@ class CustomThreadPoolExecutor implements CustomExecutor {
                 }
             } catch (InterruptedException e) {
                 System.out.println("[Worker] " + threadName + " interrupted");
-                Thread.currentThread().interrupt(); // Восстанавливаем флаг
+                Thread.currentThread().interrupt(); // Восстанавливаем флаг.
             } finally {
                 workers.remove(this);
                 threadCount.decrementAndGet();
-                activeThreads.remove(myThread); // Удаляем из списка
+                activeThreads.remove(myThread); // Удаляем из списка.
             }
         }
     }
 
     @Override
     public void shutdown() {
+        // Потоки завершатся после выполнения текущих задач.
         System.out.println("[Pool] Initiating graceful shutdown...");
         isShutdown.set(true);
-        // Потоки завершатся после выполнения текущих задач
     }
 
     @Override
@@ -174,14 +173,14 @@ class CustomThreadPoolExecutor implements CustomExecutor {
         System.out.println("[Pool] Initiating immediate shutdown...");
         isShutdown.set(true);
 
-        // Прерываем ВСЕ активные потоки
+        // Прерываем ВСЕ активные потоки.
         activeThreads.forEach(thread -> {
             if (thread != null && thread.isAlive()) {
                 thread.interrupt();
             }
         });
 
-        // Очищаем очереди
+        // Очищаем очереди.
         taskQueues.forEach(BlockingQueue::clear);
     }
 }
