@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit;
 public class Main {
     public static void main(String[] args) throws InterruptedException {
         CustomThreadPoolExecutor pool = new CustomThreadPoolExecutor(
-                2, 4, 2, TimeUnit.SECONDS, 3, 1
+                2, 4, 5, TimeUnit.SECONDS, 3, 1
         );
 
         // Посылаем 15 задач, чтобы вызвать переполнение и расширение
