@@ -1,0 +1,72 @@
+/usr/lib/jvm/java-17-openjdk-amd64/bin/java -agentlib:jdwp=transport=dt_socket,address=127.0.0.1:60729,suspend=y,server=n -javaagent:/home/michael/Documents/openIDE-253.28294.334.2/plugins/java/lib/rt/debugger-agent.jar=file:///tmp/capture8179726407772346170.props -Dkotlinx.coroutines.debug.enable.creation.stack.trace=false -Ddebugger.agent.enable.coroutines=true -Dkotlinx.coroutines.debug.enable.flows.stack.trace=true -Dkotlinx.coroutines.debug.enable.mutable.state.flows.stack.trace=true -Ddebugger.async.stack.trace.for.all.threads=true -Dfile.encoding=UTF-8 -classpath /home/michael/OpenideProjects/miap/out/production/miap:/home/michael/Documents/openIDE-253.28294.334.2/lib/idea_rt.jar Main
+Connected to the target VM, address: '127.0.0.1:60729', transport: 'socket'
+[ThreadFactory] Creating new thread: MyPool-worker-1
+[ThreadFactory] Creating new thread: MyPool-worker-2
+[Pool] Task accepted into queue #0
+[Pool] Task accepted into queue #0
+[Pool] Task accepted into queue #1
+[Pool] Task accepted into queue #2
+[Pool] Task accepted into queue #3
+[Pool] Task accepted into queue #0
+[Pool] Task accepted into queue #1
+[Pool] Task accepted into queue #2
+[Pool] Task accepted into queue #3
+[Pool] Task accepted into queue #0
+[Pool] Task accepted into queue #1
+[Pool] Task accepted into queue #2
+[Pool] Task accepted into queue #3
+[Pool] Task accepted into queue #0
+[Pool] Task accepted into queue #1
+[Pool] Task accepted into queue #2
+[Pool] Task accepted into queue #3
+[Pool] Task accepted into queue #0
+[Pool] Task accepted into queue #1
+[Pool] Task accepted into queue #2
+[Pool] Task accepted into queue #3
+[Worker] MyPool-worker-1 executes task
+[Worker] MyPool-worker-2 executes task
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Rejected] Task Main$$Lambda$15/0x000074eef0005000@7daf6ecc was rejected due to overload!
+[Worker] MyPool-worker-1 executes task
+[Worker] MyPool-worker-2 executes task
+[Worker] MyPool-worker-1 executes task
+[Worker] MyPool-worker-2 executes task
+[Worker] MyPool-worker-1 executes task
+[Worker] MyPool-worker-2 executes task
+[Worker] MyPool-worker-1 executes task
+[Worker] MyPool-worker-2 executes task
+[Worker] MyPool-worker-1 executes task
+Main: Calling shutdown...
+[Pool] Initiating graceful shutdown...
+[Worker] MyPool-worker-2 terminated.
+[Worker] MyPool-worker-1 terminated.
+Disconnected from the target VM, address: '127.0.0.1:60729', transport: 'socket'
+
+Process finished with exit code 0
